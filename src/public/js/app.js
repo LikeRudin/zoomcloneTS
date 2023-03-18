@@ -1,52 +1,22 @@
 "use strict";
-const socket = new WebSocket(`ws://${window.location.host}`);
-const messageList = document.querySelector("ul");
-const chatForm = document.getElementById("chat");
-const welcomeForm = document.getElementById("welcome");
-const nickForm = document.getElementById("nick");
-welcomeForm.style.display = "none";
-function padMSG(type, payload) {
-    const msg = { type, payload };
-    return JSON.stringify(msg);
-}
-/***
- *
- * order of process
- *
- * 1. handleChatSubmit, handleNickSubmit
- * socket.send
- *
- * 2. socket's eventListener listen "message"
- *
- * 3. create messagelist
- *
- *
-*/
-socket.addEventListener("open", () => {
-    console.log("successfully connected to server❤");
-});
+const socket = io();
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
 /**
- *
- * message 는 오브젝트이다
- * message.data로 안에있는 내용을 읽어온다
- *
+ * welcome form에 submit 이벤트가 발생하면
+ * 작동하는 함수. back-end에 enter_room이라는 이벤트를 발생시킨다.
+ * 그리고 깂괴 콜백함수를 전달한다.
+ * 전달된 콜백함수는 신기하게도 백엔드 server.js의 소켓에
+ * 두번째 인자 done으로 전달되어
+ * 백엔드에서 실행된다.
+ * @param event
  */
-socket.addEventListener("message", (message) => {
-    const li = document.createElement("li");
-    li.innerText = message.data;
-    messageList.append(li);
-});
-function handleChatSubmit(event) {
+const handleRoomSubmit = function (event) {
     event.preventDefault();
-    const input = chatForm.querySelector("input");
-    socket.send(padMSG("chat", input.value));
+    const input = form.querySelector("input");
+    socket.emit("enter_room", { payload: input.value }, () => {
+        console.log("server is done!");
+    });
     input.value = "";
-}
-chatForm.addEventListener("submit", handleChatSubmit);
-function handleNickSubmit(event) {
-    event.preventDefault();
-    const input = nickForm.querySelector("input");
-    socket.send(padMSG("nickname", input.value));
-    input.value = "";
-}
-nickForm.addEventListener("submit", handleNickSubmit);
+};
+form.addEventListener("submit", handleRoomSubmit);

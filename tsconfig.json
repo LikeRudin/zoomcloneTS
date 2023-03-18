@@ -1,8 +1,9 @@
 {
   "include": ["./src"],
   "exclude": ["node_modules"],
-  
+  "no-redclare": false,
   "compilerOptions": {
+    
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
     /* Projects */
