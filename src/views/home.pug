@@ -10,17 +10,22 @@ html(lang="en")
         header
             h1 zoomBa
         main
-            ul 
-            form#chat
-                input(type="text", required, placeholder="send message")
-                button Send
-            form#nick
-                input(type="text", required, placeholder="set a nickname")
-                button Set
             div#welcome
                 form
                     input(type="text", required, placeholder="enter the room!")
                     button Enter Room
-        script(src="/socket.io/socket.io.js") 
+            div#room
+                h3
+                ul
+                form#name
+                    input(placeholder="set a nickname", required, type="text")
+                    button set
+                form#msg
+                    input(placeholder="send a message", required, type="text")
+                    button Send
+        
+        script(src="/socket.io/socket.io.js")
+            
         script(src="/public/js/app.js")
+            
         

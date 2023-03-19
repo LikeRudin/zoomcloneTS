@@ -15,23 +15,47 @@ app.get("/*", (_, res) => res.redirect("/"));
 const httpServer = http_1.default.createServer(app);
 const wsServer = new socket_io_1.Server(httpServer);
 /**
- * socket.io 의 특징을 배울수 있다.
- * done는 client-side의 함수를 받아와서 실행하는것이다.
- *
- * 받아오는 함수는 다음과 같다.
- *  () =>{
-        console.log("server is done!");
-    });
-    실행은백엔드가 시키지만, 브라우저의 콘솔창에 출력된다.
-    즉 msg,done 에서 console.log(msg)는 vscode 터미널에
-    done()의 실행결과인 console.log("server is done!")은 브라우저 콘솔에출력된다.
+ * 소케이 연결되면 콜백을 실행합니다
+ * onAny는 어떤 이벤트가 감지되면이벤트를 출력합니다.
+ * join은 client-side에서 welcome form의 submit 핸들러의
+ * 실행을 통해 보내진 room이름을통해 소켓을 room에 참가시키고
+ * client에서보낸 showRoom을 통해 유저의 화면을바꿔줍니다.
  */
 wsServer.on("connection", (socket) => {
-    socket.on("enter_room", (msg, done) => {
-        console.log(msg);
-        setTimeout(() => {
-            done();
-        }, 10000);
+    //@ts-ignore
+    socket["nickname"] = "Anonymous";
+    socket.onAny((event) => {
+        console.log(`Socket Event: ${event}`);
+    });
+    socket.on("enter_room", (roomName, done) => {
+        socket.join(roomName);
+        done();
+        //@ts-ignore
+        socket.to(roomName).emit("welcome", socket.nickname);
+    });
+    socket.on("disconnecting", () => {
+        socket.rooms.forEach((room) => {
+            //@ts-ignore
+            socket.to(room).emit("bye", socket.nickname);
+        });
+    });
+    socket.on("new_message", (msg, room, done) => {
+        //@ts-ignore
+        socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
+        done();
+    });
+    /**
+     * client-side에서 name form에 submit이벤트가발생되면
+     * 실행되는 handlenNicknameSubmit 함수에서
+     * nickname emit을 발생시키면
+     * 해당 소켓의 닉네임값을바꿔줍니다.
+     */
+    socket.on("nickname", (nickname, room, done) => {
+        //@ts-ignore
+        socket.to(room).emit("new_message", `${socket.nickname} changed nickname: ${nickname}`);
+        //@ts-ignore
+        socket["nickname"] = nickname;
+        done();
     });
 });
 const handleListen = () => console.log("Listening on http://localhost:3000");
