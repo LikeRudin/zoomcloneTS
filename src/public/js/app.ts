@@ -119,3 +119,7 @@ socket.on("bye", (left: string) => {
 });
 
 socket.on("new_message", addMessage);
+
+socket.on("room_change", (msg:string) => {
+    console.log(msg);
+})

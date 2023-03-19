@@ -14,6 +14,16 @@ app.get("/", (_, res) => res.render("home"));
 app.get("/*", (_, res) => res.redirect("/"));
 const httpServer = http_1.default.createServer(app);
 const wsServer = new socket_io_1.Server(httpServer);
+const publicRooms = function () {
+    const { sockets: { adapter: { sids, rooms }, }, } = wsServer;
+    const publicRooms = [];
+    rooms.forEach((_, key) => {
+        if (sids.get(key) === undefined) {
+            publicRooms.push(key);
+        }
+    });
+    return publicRooms;
+};
 /**
  * 소케이 연결되면 콜백을 실행합니다
  * onAny는 어떤 이벤트가 감지되면이벤트를 출력합니다.
@@ -32,12 +42,16 @@ wsServer.on("connection", (socket) => {
         done();
         //@ts-ignore
         socket.to(roomName).emit("welcome", socket.nickname);
+        wsServer.sockets.emit("room_change", publicRooms());
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach((room) => {
             //@ts-ignore
             socket.to(room).emit("bye", socket.nickname);
         });
+    });
+    socket.on("disconnect", () => {
+        wsServer.sockets.emit("room_change", publicRooms());
     });
     socket.on("new_message", (msg, room, done) => {
         //@ts-ignore

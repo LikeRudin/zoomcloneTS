@@ -101,3 +101,6 @@ socket.on("bye", (left) => {
     addMessage(`${left} left..`);
 });
 socket.on("new_message", addMessage);
+socket.on("room_change", (msg) => {
+    console.log(msg);
+});
