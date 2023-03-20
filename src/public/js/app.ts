@@ -110,16 +110,34 @@ form!.addEventListener("submit", handleRoomSubmit);
  * 
  */
 
-socket.on("welcome", (user: string) => {
+socket.on("welcome", (user: string, newCount: number) => {
+    const h3 = room!.querySelector("h3");
+    h3!.innerText = `Room ${roomName} (${newCount})`;
     addMessage(`${user} arrived!`);
 });
 
-socket.on("bye", (left: string) => {
+socket.on("bye", (left: string, newCount: number) => {
+    const h3 = room!.querySelector("h3");
+    h3!.innerText =`Room ${roomName} (${newCount})`;
     addMessage(`${left} left..`);
 });
 
 socket.on("new_message", addMessage);
 
-socket.on("room_change", (msg:string) => {
-    console.log(msg);
-})
+/**
+ * 룸에 입장하기 전 화면에서
+ * 현재개설된 방을확인할 수 있습니다.
+ * 인자로 들어오는 rooms는 
+ * room이름 + 사이즈의 문자열을 성분으로 갖는 배열입니다
+ * 
+ * countEveryRoom()의 반환값입니다.
+ */
+socket.on("room_change", (rooms: string[]) => {
+    const roomList = welcome!.querySelector("ul");
+    roomList!.innerHTML = "";
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li!.innerText = room;
+        roomList!.appendChild(li);
+    });
+});

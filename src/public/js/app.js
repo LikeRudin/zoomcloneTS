@@ -94,13 +94,31 @@ form.addEventListener("submit", handleRoomSubmit);
  * 등의 이벤트가 도착했을때, addMessage를 호출합니다.
  *
  */
-socket.on("welcome", (user) => {
+socket.on("welcome", (user, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
     addMessage(`${user} arrived!`);
 });
-socket.on("bye", (left) => {
+socket.on("bye", (left, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
     addMessage(`${left} left..`);
 });
 socket.on("new_message", addMessage);
-socket.on("room_change", (msg) => {
-    console.log(msg);
+/**
+ * 룸에 입장하기 전 화면에서
+ * 현재개설된 방을확인할 수 있습니다.
+ * 인자로 들어오는 rooms는
+ * room이름 + 사이즈의 문자열을 성분으로 갖는 배열입니다
+ *
+ * countEveryRoom()의 반환값입니다.
+ */
+socket.on("room_change", (rooms) => {
+    const roomList = welcome.querySelector("ul");
+    roomList.innerHTML = "";
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.appendChild(li);
+    });
 });

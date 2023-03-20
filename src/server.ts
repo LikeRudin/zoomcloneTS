@@ -1,6 +1,7 @@
 import http from "http";
 import express from "express";
 import { Server}  from "socket.io";
+import { instrument } from "@socket.io/admin-ui";
 
 const app = express();
 
@@ -16,8 +17,16 @@ app.get("/*", (_, res) => res.redirect("/"));
 
 
 const httpServer = http.createServer(app);
-const wsServer = new Server(httpServer);
+const wsServer = new Server(httpServer, {
+    cors: {
+        origin: ["https://admin.socket.io"],
+        credentials: true,
+    },
+});
 
+instrument(wsServer, {
+    auth: false,
+});
 
 
 const publicRooms = function() {
@@ -27,6 +36,13 @@ const publicRooms = function() {
         },
     } = wsServer;
     const publicRooms: string[] = [];
+    /**
+     * rooms에는 각 socket의 id와 동일한 이름의
+     * 개인방이 저장되어있습니다.
+     * 만일 rooms의 방이름을 가져와서
+     * socket의 id와 일치하는지 확인합니다.
+     * 만약 그런게 없다면 그건 public room 입니다.
+     */
     rooms.forEach((_, key) => {
         if (sids.get(key) === undefined){
             publicRooms.push(key);
@@ -35,14 +51,45 @@ const publicRooms = function() {
     return publicRooms;
 }
 
+
 /**
- * 소케이 연결되면 콜백을 실행합니다
- * onAny는 어떤 이벤트가 감지되면이벤트를 출력합니다.
- * join은 client-side에서 welcome form의 submit 핸들러의
- * 실행을 통해 보내진 room이름을통해 소켓을 room에 참가시키고
- * client에서보낸 showRoom을 통해 유저의 화면을바꿔줍니다.
+ * adapter의 rooms 내부에 room 이름으로 접근하여
+ * 저장되어있는 socket id 의개수를 반환합니다.
+ * @param roomName 
+ * @returns number: 방에 참여한 소켓의 개수
+ */
+
+const getRoomsMap = function (){
+    return wsServer.sockets.adapter.rooms
+}
+const countRoom = function (roomName: string) {
+    const rooms = getRoomsMap();
+    return rooms.get(roomName)?.size
+}
+const countEveryRoom = function (){
+    const roomList = publicRooms();
+    const roomsCount: string[]= [];
+    roomList.forEach((room) =>{
+        const tuple =`${room} (${countRoom(room)})`;
+        roomsCount.push(tuple);
+    })
+    return roomsCount;
+    
+}
+
+/**
+ * 소켓이 연결되면 "connection"이벤트가 감지되어
+ * 콜백이실행됩니다.
+ * front로부터 done을 전달받는 on이벤트리스너들은
+ * 대부분 to를 사용하여 모든 대상에게 이벤트를 발생시킵니다.
+ * to의 수신인은  발신인 본인을 제외한 사람들이므로
+ * 발생한 이벤트의 결과를 done을 통해 발신인도 경험하게 됩니다.
  */
 wsServer.on("connection", (socket) => {
+    /**
+     * 브라우저를 열자마자 방 리스트를 볼 수 있게 해줍니다.
+     */
+    socket.emit("room_change", countEveryRoom());
     //@ts-ignore
     socket["nickname"] = "Anonymous";
     socket.onAny((event: Event) => {
@@ -52,17 +99,22 @@ wsServer.on("connection", (socket) => {
     socket.on("enter_room", (roomName, done) =>{
         socket.join(roomName);
         done();
+        /**
+         * 모든사람들에게 room을 공지합니다.
+         */
         //@ts-ignore
-        socket.to(roomName).emit("welcome", socket.nickname);
-        wsServer.sockets.emit("room_change", publicRooms());
+        socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName));
+        wsServer.sockets.emit("room_change", countEveryRoom());
+        console.log(wsServer.sockets.adapter.rooms);
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach((room)  => {
             //@ts-ignore
-            socket.to(room).emit("bye", socket.nickname)});
+            socket.to(room).emit("bye", socket.nickname, countRoom(room) - 1)
+        });
     });
     socket.on("disconnect", ()=>{
-        wsServer.sockets.emit("room_change", publicRooms());
+        wsServer.sockets.emit("room_change", countEveryRoom());
     })
     socket.on("new_message", (msg, room, done) => {
         //@ts-ignore
