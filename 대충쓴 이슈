@@ -1,0 +1,94 @@
+0. webSocket.Server 의 인자 
+
+아래의 코드에서
+const httpServer = http.createServer(app);
+const wsServer = new WebSocket.Server({ port:3000 });
+
+Error: listen EADDRINUSE: address already in use :::3000  오류가 발생했다.
+
+
+서버가 실행중일때 임의로 프로그램을 꺼버리면 port 3000에 연결되어있는 서버는 살아있는 경우가 있다고 한다.
+ 그럴때에는 cmd를 열고 netstat -ano 명령어를 입력하여 현재 컴퓨터에 연결되어있는 서버목록을 받아온후.
+ 포트 :3000을 점령중인 process를 kill 명령어로 종료해줘야 한다고 한다.
+ 또는 재부팅을 하면 해결되는오류라고 했다.
+
+하지만 나는 그렇게 해결이 되지 않았다.
+
+그래서 WebSocket.Server의 인자를 httpServer로바꿔주었는데, 
+WebSocket.Server는 port, server, noServer만
+
+인자로 받을 수 있다고 한다.
+
+또 타입스크립트에서 server가 정의되지 않아 문제가있는 코드라는 메시지도 출력되었다.
+그래서 httpServer를 server로 바꾼후 WebSocket.Server의 인자도 { server}로 바꿔주자 타입스크립트 오류도 해결되었고, 서버도 정상적으로 작동하였다.
+
+
+
+
+
+2. 모듈 타입체크
+
+typescript가 라이브러리를 이해하지 못한다.
+
+complierOptions의 outDir에 컴파일된 js파일이 저장될 폴더를 입력하자.
+
+1. 일단 ws, express, socket.io 라이브러리도 타입체크를 해주었으면한다.
+2. complierOptions의 types ["ws", "express", "socket,io"] 를 입력
+
+-> type declaration 파일을 설치해주어야 한단다.
+
+npm install @types/ws @types/express @types/socket.io 를 통해 설치완료
+
+
+3. 워치모드 + 노데몬
+
+ nodemon 으로 server.js가 저장될때마다 서버가 재시작하는것처럼
+ts 파일이 저장될때마다 자동으로 js로 컴파일되게 하고싶다.
+
+watch모드를 키자.
+tsc --watch
+
+터미널 두개를 키고 하나는 tsc --watch
+하나는 nodemon 을 실행시켜주면된다.
+
+
+
+
+4. HTMLElement 증발
+
+ 자꾸 document.querySelector로 불러온 HTML 요소들이 없을수 있다고 한다.
+if 문으로타입가드를 쳐주거나 느낌표로 해결한다
+
+5. form 을 숨기려면 form.style.display = "none"
+다시 보이려면 form.style.display = "block"
+
+
+6.  html 문서를 통해 설치한 함수 -타입스크립트와의 충돌
+
+script(src="/socket.io/socket.io.js")
+
+client-side 
+
+socket = io(); 
+입력시 io 가 존재하지 않는다고한다.
+
+npm i @types/socket.io-client
+등 등 별짓을 다해봤다.
+
+import {io} from socket.io를 하면
+js로 번역된 파일에서 ES6 코드와 common js 코드가 혼용되어 
+오류가 생긴다.
+
+일단 //@ts-ignore로 무시해주었다.
+
+나중에 type="module" 과 common js를 혼용하는 법을 알아봐야겠다.
+
+
+7. 방 이름이 안보임
+
+접속중인 브라우저들은 새로운방이 생성되면 바로 볼 수 있는데
+새로 접속한 브라우저들은 못본다
+wsServer.on의 콜백의 첫줄로
+socket.emit("room_change") 를 추가하여
+
+브라우저로 접속을 하자마자 client 사이드의 socket.on("room_change")가 작동하게 하였다.

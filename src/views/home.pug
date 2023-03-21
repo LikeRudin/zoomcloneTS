@@ -6,28 +6,35 @@ html(lang="en")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title zoomba
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
-    body
+        style.
+            .big-text { font-size: 50px; }
+            .text-orange { color: #FF9500; }
+            .text-red { color: #E82D47; }
+            .body { background-image : url("/public/image/pixabay_pdpics.jpg");
+                    background-size: cover;}
+            .appTitle {color: white;}
+    body.body
         header
-            h1 zoomBa
-        main
-            div#welcome
-                form
-                    input(type="text", required, placeholder="enter the room!")
-                    button Enter Room
-                h4 Open Rooms: 
-                ul
-            div#room
-                h3
-                ul
-                form#name
-                    input(placeholder="set a nickname", required, type="text")
-                    button set
-                form#msg
-                    input(placeholder="send a message", required, type="text")
-                    button Send
-        
+            h1.appTitle
+                span.big-text.text-orange N
+                span o
+                span.text-orange om ad
+                span.big-text I
+                span.big-text.text-red C
+                span.text-red asin
+                span.big-text.text-red O
+                span.big-text  LAS
+                span -VEGAS
+            div#music
+                audio#player(controls, src="/public/music/back.mp3", autoplay)
+            div#myStream
+                video#myFace(autoplay, playsinline, width="400", height="400")
+                button#mute Mute
+                button#camera Turn Camera Off
+                select#cameras
+
+            a(href="https://docs.google.com/forms/d/e/1FAIpQLScNPjPzlWDJbIc527k_qIWH87JiseNuBrHXexih42pehIl1hA/viewform") no money?
         script(src="/socket.io/socket.io.js")
             
         script(src="/public/js/app.js")
             
-        

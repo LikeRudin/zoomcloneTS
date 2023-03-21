@@ -1,0 +1,309 @@
+-------------------------------------------------0. SocketIO vs WebSockets
+socketIO는 realtime- binary- event base 통신을 제공한다.
+
+
+
+연결의 신뢰성을 위한 수단:
+ webSocket을 사용에 문제가 생기는 경우에는 http long-polling으로
+ 연결에 사용되는 기술을 번경한다.
+
+
+
+-------------------------------------------------1. Installing SocketIO
+
+
+일단 ws와 관련된 모든 코드를 삭제하고 시작한다.
+
+ home에 다음과 같은 링크를 주어 
+ 클라이언트 사이드 socket.io를 설치한다. script(src="/socket.io/socket.io.js")
+
+백엔드사이에서 
+wsServer.on("connection" (socket) => {
+    console.log(socket);
+})
+을 통해 socket 오브젝트를 관찰할 수 있는데
+
+client: Client 를 통해 
+연결되는 유저들의 정보가 거기에 들어있는것을 볼 수 있다.
+https://socket.io/docs/v4/client-socket-instance/
+Each new connection is assigned a random 20-characters identifier.
+
+This identifier is synced with the value on the server-side.
+
+**
+나는 삭제하기 싫어서 server를 wsServer로 번경했다.
+app은 wsApp으로 번경했다.
+
+pug에 입력된 값이나 package.json에서 nodemon이 가리키는 요소는 server.js
+app.js이므로
+
+새로운 파일을 생성해서 거기에 코드를 짜면된다.
+
+issue: 
+두 파일에 같은 이름의 변수 (socket)을 지정하자 문제가 생겼다.
+
+ Cannot redeclare block-scoped variable 'socket'
+ tsconfig.json의 compilerOption 다음을 추가함으로써 해결하라는데 우째 추가할수가없다.
+"no-redclare": false,
+
+그래서 그냥 wsServer와 WsAPP파일의 확장자를 text로 바꿔주었다.
+
+
+issue1. 
+
+import SocketIO  from "socket.io";
+
+가 더이상 불가능하다
+import { Server}  from "socket.io";
+를 사용해야 한다.
+
+https://socket.io/get-started/chat#integrating-socketio
+
+
+issue2.
+ts2304
+typescript가 client 부분의 io오브젝트를감지하지 못한다.
+
+npm i @types/socket.io-client 로 해결.
+했는데
+
+이제 type="module"이 아니라 자바스크립트에서 문제가 생긴다.
+
+결국 //@ts-ignore로 
+//@ts-ignore
+const socket = io();
+를 입력해서 임시로 회피하였다.
+
+
+
+-------------------------------------------------2. socket IO is amazing
+
+client-side
+socket.emit() 메서드
+
+인자로 이벤트, 메시지, 콜백을 입력한다.
+
+
+1. 이벤트이름은 우리가 마음대로 지어도 괜찮다.
+
+2. 메시지도 아무 타입이나 작성할 수 있다
+
+3. 콜백은 백엔드로 보내져
+백엔드에서 호출하지만 front에서 실행한다.
+
+4. 메시지는 여러개 보낼수있다. 하지만 항상 콜백보다 먼저나와야한다.
+콜백인자는 마지막에 위치해야한다.
+
+server-side 
+socket.on() 메서드
+
+인자로 (이벤트, (메시지 ,콜백)) 을 입력받는다.
+https://socket.io/docs/v4/client-api/#socketemiteventname-args
+예시코드
+
+ client:
+socket.emit("hi", "text", true, ()=> {
+    console.log("이게바로 콜백")
+})
+
+server:
+socket.on("hi", (a, b)=> {
+    console.log(a);
+    b();
+})
+
+
+-------------------------------------------------4. Rooms
+
+스크럼방식으로 공부했다.
+
+새로 사용하는 메서드
+server-side
+
+1.socket.join(room: string)
+
+return promise
+
+입력받은 room혹은 room 목록에 socket을 추가합니다.
+https://socket.io/docs/v4/server-api/#socketjoinroom
+
+형태:
+io.on("connection", (socket) => {
+    socket.join("room 237")
+    socket.join("[room 237, "room238"]")
+    io.to("room 237").emit("a new user has joined the room");
+});
+
+2. socket.onAny(callback)
+모든종류의 이벤트를 캐치하는 리스너를 등록합니다.
+https://socket.io/docs/v4/server-api/#socketonanycallback
+
+socket.onAny((event, ...args) => {
+    console.log(`got ${event}`);
+});
+
+
+3. socket.to(room)
+socket을 반환한다.
+
+이벤트방출 (emit. emission)의 제어를 설정합니다.
+to의 인자로 입력된 방들에게 해당이벤트는 broadcast 됩니다.
+https://socket.io/docs/v4/server-api/#sockettoroom
+
+예시코드
+io.on("connection", (socket) => {
+    //방한개
+    socket.to("room1").emit("an_event", {some: "data"});
+
+    // 방 여러개 
+    
+    //- to체인버전
+    socket.to("room1").to("room2").emit("hello", {some: "data"});
+    //-room array 버전 
+    socket.to(["room1", "room2"]).emit("hello". {some:data})
+    ;
+
+    //방 말고 socket.id를 통해 메시지 보내기
+    io.to("id").emit("manage");
+    });
+
+-------------------------------------------------5. Rooms messages
+
+server-side
+새로 쓰이는 property
+
+socket.rooms
+https://socket.io/docs/v4/server-api/#socketrooms
+
+이 socket이 포함되어있는 room이름들의 집합입니다.
+*room이름은 string으로 저장되어있습니다.
+
+
+예시 코드 
+io.on("connection",(socket) => {
+    console.log(socket.rooms); //Set {<socket.id>}
+    socket.join("room1");
+    console.log(socket.rooms); // Set {<socket.id>, "room1"}
+})
+
+
+-------------------------------------------------8 ~9 Room count
+
+새로나오는 개념:
+SocketIo Adapter
+https://socket.io/docs/v4/adapter/
+어뎁터는 Socket.IO sever에 이벤트를 broadcast해주는데에 사용된다.
+이것은 모든 client에게 같은 정보를 수신할 수 있게 해준다.
+
+어플리케이션이용자가 많아지는경우, 서버를 많이 만든다.
+그렇다면 똑같은 화면에서 함께 채팅하고있어도 서로 다른서버에 속해있을 수 도 있다.
+
+Adapter는 바로 그러한 유저끼리도 채팅할수있게
+client-server1-adapter -database - apater-server2 -client 순서로
+정보를 전송 할수있게 해준다. 
+
+
+javascript Map object
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
+Map은 key:value 쌍을 저장하는 객체이다.
+특이한점은 저장된 순서를 기억한다는 것이다.
+
+*구조분해 할당
+변수에 어떤 중첩 오브젝트 내부의 값을 저장하고싶을때 사용한다.
+다음은 sids와 rooms라는 변수를 만들어 wsServer.sockets.sids 및 wsServer.sockets.rooms를 
+저장하는 구조분해 할당 코드이다.
+const {
+        sockets: {
+            adapter: { sids, rooms},
+        },
+    } = wsServer;
+
+adapter는 sids와 rooms이라는
+두개의 자바스크립트의 Map오브젝트로 구성되어있다.
+https://socket.io/docs/v4/rooms/#implementation-details
+
+다음과 같은 형식으로 데이터가 저장된다.
+sids: Map<SocketId, Set<Room>>
+
+socket의 id => room이름
+
+rooms: Map<Room, Set<SocketId>>
+room 이름 => socket의 id
+
+
+
+모든 소켓들은 private룸을 가지고있다.
+
+이 private 룸은 rooms에
+socket의 id와 동일한 이름으로 저장되어있다.
+
+rooms에 내가 웹페이지에 입력한 이름이 있다면
+그것은 public, 현재 중개되는 방이란 뜻이고
+
+랜덤 20여자의 123fojasodfh89y2 같은 이름이 있다면
+그것은현재 접속한 소켓이 가진 개인방이다.
+
+"enter_room"에관한 이벤트리스너 콜백에
+console.log(wsServer.sockets.adapter.rooms)
+를 입력하면 다음과 같은 로그가 콘솔에 출력된다.
+
+Map(3) {
+  'cMLsSEYlpvSTUyXnAAAB' => Set(1) { 'cMLsSEYlpvSTUyXnAAAB' },
+  'PklpFivkFLdKJ9TOAAAF' => Set(1) { 'PklpFivkFLdKJ9TOAAAF' },
+  '11' => Set(1) { 'PklpFivkFLdKJ9TOAAAF' }
+}
+Socket Event: enter_room
+Map(3) {
+  'cMLsSEYlpvSTUyXnAAAB' => Set(1) { 'cMLsSEYlpvSTUyXnAAAB' },
+  'PklpFivkFLdKJ9TOAAAF' => Set(1) { 'PklpFivkFLdKJ9TOAAAF' },
+  '11' => Set(2) { 'PklpFivkFLdKJ9TOAAAF', 'cMLsSEYlpvSTUyXnAAAB' }
+}
+
+
+1번 브라우저의 private room
+2번 브라우저의 private room
+11을 입력해 2번 브라우저가 방에 입장
+
+""
+""
+11을 입력해 1번브라우저가 방에 입장
+이를이용하여 public room만 추출한다.
+간단히, 방 이름과 일치하는 socket id가 없다면
+그방은 public room 이다.
+
+-------------------------------------------------10 user count
+
+
+wsServer.sockets.adapter.rooms.get("public roomname")?.size
+를 통해 해당 방에 들어있는 유저의 숫자를 알 수있다.
+
+
+client side의 채팅방에서 유저수 정보를 알리기 위해
+사용할 수 있다.
+
+
+방에 방의 이름과 유저수를 표시하는 h3 을 추가 한 후
+welcome, bye 등의 이벤트가 발생할 때마다 
+h3의 내용을 수정하게 하면 인원을 실시간으로 표기해 줄 수 있다.
+
+
+채팅방을 입장하기 전화면에도 보여주고싶어서
+public room 의 이름과 사이즈를 담은 배열을 
+room_change 이벤트화 함께 emit 해주었다.
+
+또 브라우저에 새로 접속한 유저도 바로 알 수 있게
+server side의 시작부분에서 room_change 를 emit 하는 코드를 
+추가해주었다.
+
+-------------------------------------------------11 admin panel
+
+npm i @socket.io/admin-ui 
+명령어가 듣지를 않는다
+백틱을 곁들이자 설치가완료되었다.
+
+npm i '@socket.io/admin-ui'
+
+ https://admin.socket.io
+
+ 에 접속해서 http://localhost:3000/admin을 입력하면
+ 관리자 창에 입장할 수 있다.
