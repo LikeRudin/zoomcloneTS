@@ -1,0 +1,96 @@
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title noom
+        link(rel="stylesheet", href="https://unpkg.com/mvp.css")
+        style.
+            
+            .body { background-image : url("/public/image/pixabay_pdpics.jpg");
+                    background-size: cover;}
+            .color-tomato {background-color: #AFC1C8;}
+            .color-yellow {background-color: yellow;}
+            .color-white {background-color: white;}
+            .big-text { font-size: 50px; }
+            .text-white {color: white;}
+            .text-orange { color: #FF9500; }
+            .text-red { color: #E82D47; }
+            
+            .appTitle {color: black;}
+            .makeflex{
+                display: flex;
+                justify-content: space-evenly;
+            }
+            #log {
+                height: 70vh;
+                font-size: 20px;
+                fext-weight: bold;
+                border-radius: 15px;
+
+            }
+            #rooms {
+                height: 30vh;
+                background-color: #FFC0CB;
+                border-radius: 15px;}
+            #welcome {
+                width: 120vh;
+            }
+            ul  {
+                    list-style-type: disc;
+                    margin-block-start: 1em;
+                    margin-block-end: 1em;
+                    margin-inline-start: 0px;
+                    margin-inline-end: 0px;
+                    padding-inline-start: 20px;
+            }   
+
+            
+    body.body
+        header
+            h1.appTitle
+                span.big-text.text-orange N
+                span.text-white o
+                span.text-orange om ad
+                span.big-text.text-white I
+                span.big-text.text-red C
+                span.text-red asin
+                span.big-text.text-red O
+                span.big-text.text-white  LAS
+                span.text-white -VEGAS
+          
+    
+        main
+            div#welcome
+                form
+                    input(type="text", required, placeholder="enter the room!")
+                    button Enter Room
+                div#rooms    
+                    h4 Open Rooms: 
+                    ul#roomlist
+            div#log.color-tomato
+                ul#chat.color-yellow 
+                    li #####      this is a chat room!!      ####                                                          
+                ul#blackjack.color-white 
+                    li #####     this is a game room!!       ####                                                                             
+            div#room.color-tomato
+                h3
+                form#msg
+                    input(placeholder="send a message", required, type="text")
+                    button Send
+                form#name
+                    input(placeholder="set a nickname", required, type="text")
+                    button set
+                form#startgame
+                    button#gamestart your friends are not here? start game!
+                form#game            
+                    button#hit hit   
+                    button#stand stand 
+                    button#double doulbe 
+        
+        script(src="/socket.io/socket.io.js")
+            
+        script(src="/public/js/app.js")
+            
+        
