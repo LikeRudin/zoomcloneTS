@@ -1,0 +1,230 @@
+3. 2 camera Switch
+
+
+함수의 흐름은 다음과 같다.
+
+
+인터페이스의 요소별 상호작용
+
+#각 요소는 다음과 같다.
+1. 카메라 버튼
+2. 음소거 버튼 
+3. 카메라 셀랙트 태그.
+
+
+
+1. 브라우저 최초접속
+
+getMedia가 인자없이 실행된다.
+myStream이 생성되고 비디오 태그에 저장된다.
+
+deviceId가 없으므로  
+getCameras가 실핼된다.
+-> select태그의 옵션에
+각 카메라의 정보와 label을 저장한다.
+
+이때 myStream의 첫번째 비디오 트랙
+을 "현재 선택 옵션" 으로 설정된다.
+
+2. select태그로 카메라 번경
+해당 select태그의 값을 인자로 받아
+getMedia가 실행된다.
+
+내부에서 getUserMedia는 cameraConstraints를
+인자로받아 실행된다.
+
+이후 myStream이 담고있는 
+stream 정보가 번경된다.
+devicedId가 존재하니까
+더이상 getCameras는 실행되지않는다.
+{}
+
+
+3. 소리 on/Off 버튼을 누른다.
+myStream에 저장된 audio트랙들의
+enabled 값이 반전된다.
+
+4. 비디오 on/off 버튼을 누른다.
+myStream에 저장된 video트랙들의
+enabled 값이 반전된다.
+
+
+3.4 Rooms
+
+목표는 기존 작업을 숨기고,
+타이틀 화면을 만드는것.
+
+강의의 시작
+getMedia()를 삭제한다.
+
+--room을 만들어야하니까 당연함.
+
+startMedia를 만든다.
+-> room에 입장하면 
+타이틀 화면을 숨기고, 카메라를 가져오는 역할을
+한다.
+즉 여기에 getMedia가 들어가겠지
+
+기술적으로 새로운건 하나도없다.
+
+3.5~
+이제부터 webRtc 통신 프로세스를 만든다.
+
+
+일단 startMedia 함수를 async 로 전환한다.
+why? : startMedia에 코드를 추가할건데
+전체적으로 "동기적"으로 실행하고싶으니까.
+
+ getMedia는 비동기 함수이다.
+하지만 getMedia가 끝나야
+실행되어야 하는 함수들이 있으므로
+
+코드가 동기적으로 실행되게 하기위해서 
+await을 getMedia 앞에 추가해주는것이다.
+
+
+
+await
+ const startMedia =async function() {
+    welcome!.hidden = true;
+    call!.hidden = false;
+    await getMedia();
+}
+
+
+offer를 만들자
+새로운 RTCPeerConnection()
+오브젝트를 만들고,
+.addTrack()를 이용해
+거기에 myStream의 track들을 전부 추가해준다. 
+
+그리고 welcome 이벤트가 감지되면
+offer를 만들고, 자신의 정보에
+저장한 후, offer 이벤트를 발생시킨다.
+createOffer();
+setLocalDescription(offer);
+socket.emit("offer", offer, roomName)
+
+신참이 offer를 받으면
+myPeerConnection.setRemoteDescription(offer);
+를 입력해주어야한다.
+
+하지만 makeconnection (startMedia)
+의 실행이 socket.emit("join_room")
+이후이므로
+순서를 바꿔준다.
+await makeConnection <- 비동기의 동기화
+알죠?
+socket.emit("join_room")
+
+
+이후 offer 이벤트 받고
+setRemoteDescription에 설정하고
+다시 createAnswer하고
+setLocalDescription에 설정하고..
+
+반복한다.
+answer
+
+IceCandidate 
+
+
+3.8 Senders 
+
+RTCSender는 
+어떤형식으로 MediaStreaTrack이 
+부호화되어있는지, 어떻게 remote peer에 
+전달할지에대한 정보를 담고있는 object이다.
+
+getSenders는 각 Track에 대한 sender object의
+리스트를 반환한다.
+
+RTCRtpSender.replaceTrack()
+
+
+npx localtunnel --port 3000
+
+
+3.9 Stun server
+
+컴퓨터와 전화기가 다른 wifi에선
+연결할 수 없는 문제 해결.
+
+Stun 서버는 컴퓨터가 공용 ip를 찾게 해준다.
+내 browser가 사용중인 ip 주소를 찾아준다
+-> peer가 내 ip를 볼 수 있게된다.
+반대도 성립한다.
+
+3.10 webRTC가 구린점
+
+peer-to-peer 은
+연결된 클라이언트끼리 stream을 서로 전송한다.
+
+즉 많은 인원이 연결될수록,
+전송하고 받는 stream의 양이 늘어난다.
+
+하지만 SFU를 사용하면 중간에있는 서버를 경유해
+한번만 stream을 전송하고 다른사람들의
+stream도 한번에 받을 수 있다.
+
+3.11 DataChannel.
+
+RTCPeerConnection.createDataChannel()
+https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createDataChannel
+
+
+offer를 보내는 client는
+createDataChannel() 을 통해
+dataChannel을 만든다.
+
+offer를 받는 client는
+그냥 "datachannel"이벤트에대한 리스너를 등록한다.
+사용 이벤트 datachannel
+
+
+
+
+
+
+querySelector가 저장한건 element
+getElementById 가 저장한건 HTMLElement
+
+
+추가로직
+
+1. 채팅방에서 
+my Stream, chat , peerStream 분리
+-> css 를 위함
+
+2. chat log (ul) 및 chatForm 추가.
+chatForm은 input과 button이 있다
+
+handleChatForminput 함수 추가 
+myDatachannel.send를 통해 메시지를 보냄.
+단! datachannel이 완성되고나서 채팅을 할 수 있게 
+display를 hidden으로 설정했다가
+datachannel 완성후 보이게 설정함.
+
+welcome과 offer 의 이벤트 리스너으 ㅣ최하단에
+chatForm!.className = "";
+    chatLog!.className ="chatclass";
+    값을 추가함
+
+
+
+chatform input에는 
+datachannel.send가 메시지 이벤트를
+만드므로 따로 socket.emit(message)
+를 넣지 않음.
+4px4pxmargin: 0;    
+    
+#chat {height: 30vh;
+    overflow-y: scroll;
+    max-width: 100%;
+    border: 1px solid #e3e3e3;
+    border-color: tomato;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 0;}

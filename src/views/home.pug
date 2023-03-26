@@ -4,36 +4,49 @@ html(lang="en")
         meta(charset="UTF-8")
         meta(http-equiv="X-UA-Compatible", content="IE=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        title zoomba
+        title noom
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
         style.
-            .big-text { font-size: 50px; }
-            .text-orange { color: #FF9500; }
-            .text-red { color: #E82D47; }
-            .body { background-image : url("/public/image/pixabay_pdpics.jpg");
-                    background-size: cover;}
-            .appTitle {color: white;}
-    body.body
+            .inroom{
+                display: flex;
+                justify-content: space-between;
+            }
+            .hidden {
+                display: none;
+            }
+            .chatclass {
+                height: 30vh;
+                overflow-y: scroll;
+                max-width: 100%;
+                border: 1px solid #e3e3e3;
+                border-color: tomato;
+                display: flex;
+                flex-direction: column;
+                padding: 8px;
+                border-radius: 4px;
+                margin: 0;
+                }        
+    body
+        h1 Noom graduate p2p연결시 채팅방등장
         header
-            h1.appTitle
-                span.big-text.text-orange N
-                span o
-                span.text-orange om ad
-                span.big-text I
-                span.big-text.text-red C
-                span.text-red asin
-                span.big-text.text-red O
-                span.big-text  LAS
-                span -VEGAS
-            div#music
-                audio#player(controls, src="/public/music/back.mp3", autoplay)
-            div#myStream
-                video#myFace(autoplay, playsinline, width="400", height="400")
-                button#mute Mute
-                button#camera Turn Camera Off
-                select#cameras
-
-            a(href="https://docs.google.com/forms/d/e/1FAIpQLScNPjPzlWDJbIc527k_qIWH87JiseNuBrHXexih42pehIl1hA/viewform") no money?
+            div#welcome
+                form
+                    input(placeholder="room name", required, type= "text")
+                    button Enter Room 
+            div#call
+                div#myStream
+                    video#myFace(autoplay, playsinline, width="400", height="400")
+                    button#mute Mute 
+                    button#camera Turn Camera Off
+                    select#cameras
+                div#chat
+                    u#chatlog
+                    form#msg
+                        input(placeholder="send a message", required, type="text")
+                        button Send Text           
+                div#peerStrem    
+                    video#peerFace(autoplay, playsinline, width="400", height="400")
+            
         script(src="/socket.io/socket.io.js")
             
         script(src="/public/js/app.js")
